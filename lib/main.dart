@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:favo/entry.dart';
+import 'package:favo/photo_list.dart';
 import 'package:rive/rive.dart';
 import 'dart:math';
 import 'dart:ui';
@@ -17,11 +18,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => LoginPage(title: 'ログイン'),
-        '/login': (context) => EntryPage(title: '新規登録'),
-      },
     );
   }
 }
@@ -209,13 +205,7 @@ class _LoginPageState extends State<LoginPage>
                             //side: BorderSide(color: Colors.black),
                             ),
                         //押した時の処理
-                        onPressed: () {
-                          // バリデーションチェック
-                          if (_formKey.currentState.validate()) {
-                            //画面遷移
-                            Navigator.of(context).pushNamed('/mypage');
-                          }
-                        },
+                        onPressed: () => _singUp(),
                       ),
                       //位置調整
                       SizedBox(height: 40),
@@ -233,6 +223,7 @@ class _LoginPageState extends State<LoginPage>
                             ),
                         //押した時の処理
                         onPressed: () {
+                          //画面遷移
                           Navigator.of(context).push(
                             PageRouteBuilder(
                               pageBuilder:
@@ -315,7 +306,6 @@ class _LoginPageState extends State<LoginPage>
               ),
               //画面遷移時、リセットされる
               SizedBox(
-
                 // サイズが大きすぎたので調整する
                 height: 90,
                 width: 90,
@@ -344,5 +334,19 @@ class _LoginPageState extends State<LoginPage>
     final value = lerpDouble(2000, 0, animation.value);
     //向き(x軸、y軸、z軸)
     return Matrix4.translationValues(value, 0.0, 0.0);
+  }
+
+  //アカウント登録時にチェックするメソッド
+  void _singUp() {
+    // バリデーションチェック
+    if (_formKey.currentState.validate() != true) {
+      return;
+    }
+    //画面遷移(現在の画面を削除して、新しく画面を追加する)
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => PhotoListPage(title: '画像一覧'),
+      ),
+    );
   }
 }

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'dart:math';
 import 'dart:ui';
 
-//
 class EntryPage extends StatefulWidget {
   EntryPage({Key key, this.title}) : super(key: key);
 
@@ -343,6 +342,7 @@ class _EntryPageState extends State<EntryPage>
                       ),
                   //押した時の処理
                   onPressed: () {
+                    //画面遷移
                     Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) {
