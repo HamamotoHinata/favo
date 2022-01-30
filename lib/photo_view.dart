@@ -1,19 +1,17 @@
+import 'package:favo/providers.dart';
+import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:favo/photo.dart';
+import 'package:flutter_riverpod/all.dart';
+import 'package:flutter_riverpod/src/provider.dart';
 import 'main.dart';
+import 'package:share/share.dart';
 
 class PhotoViewPage extends StatefulWidget {
-  const PhotoViewPage({
-    Key key,
-    this.imageURL,
-    this.imageList,
-  }) : super(key: key);
+  PhotoViewPage({Key key, this.title}) : super(key: key);
 
-  //最初に表示する画像のURLを受け取る
-  final String imageURL;
-
-  //引数から画像のURLを受け取る
-  final List<String> imageList;
+  final String title;
 
   @override
   _PhotoViewPageState createState() => _PhotoViewPageState();
@@ -21,17 +19,13 @@ class PhotoViewPage extends StatefulWidget {
 
 class _PhotoViewPageState extends State<PhotoViewPage> {
   PageController _controller;
-  final List<String> imageList = [
-    //画像
-  ];
 
   @override
   void initState() {
     super.initState();
-
-    final int initialPage = widget.imageList.indexOf(widget.imageURL);
     _controller = PageController(
-      initialPage: initialPage,
+      //Riverpodから初期値を受け取り設定
+      initialPage: context.read(photoViewInitialIndexProvider),
     );
   }
 
@@ -48,15 +42,35 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
       body: Stack(
         children: [
           //画像一覧
-          PageView(
-            controller: _controller,
-            onPageChanged: (int index) => {},
-            children: widget.imageList.map((String imageURL) {
-              return Image.network(
-                imageURL,
-                fit: BoxFit.cover,
+          Consumer(
+            builder: (context, watch, child) {
+              //画像データ一覧を受け取る
+              final asyncPhotoList = watch(photoListPvovider);
+              return asyncPhotoList.when(
+                data: (photoList) {
+                  return PageView(
+                    controller: _controller,
+                    onPageChanged: (int index) => {},
+                    children: photoList.map((Photo photo) {
+                      return Image.network(
+                        photo.imageURL,
+                        fit: BoxFit.cover,
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+                error: (e, stackTrace) {
+                  return Center(
+                    child: Text(e.toString()),
+                  );
+                },
               );
-            }).toList(),
+            },
           ),
           //アイコンボタンを画像の手前に重ねる
           Align(
@@ -82,11 +96,17 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
                 children: [
                   //共有ボタン
                   IconButton(
-                    onPressed: () => {},
+                    onPressed: () => {
+                      _onTapShare(),
+                    },
+                    color: Colors.white,
+                    icon: Icon(Icons.share),
                   ),
                   //削除ボタン
                   IconButton(
-                    onPressed: () => {},
+                    onPressed: () => {
+                      _onTapDelete(),
+                    },
                     color: Colors.white,
                     icon: Icon(Icons.delete),
                   ),
@@ -109,5 +129,30 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
         builder: (_) => LoginPage(title: 'ログイン'),
       ),
     );
+  }
+
+  //削除
+  Future<void> _onTapDelete() async {
+    final photoRepository = context.read(photoRepositoryProvider);
+    final photoList = context.read(photoListPvovider).data.value;
+    final photo = photoList[_controller.page.toInt()];
+
+    if (photoList.length == 1) {
+      Navigator.of(context).pop();
+    } else if (photoList.last == photo) {
+      await _controller.previousPage(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+    await photoRepository.deletePhoto(photo);
+  }
+
+  //シェア処理
+  Future<void> _onTapShare() async {
+    final photoList = context.read(photoListPvovider).data.value;
+    final photo = photoList[_controller.page.toInt()];
+    //画像URLを共有
+    await Share.share(photo.imageURL);
   }
 }

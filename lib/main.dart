@@ -1,10 +1,11 @@
+import 'package:favo/providers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:favo/entry.dart';
 import 'package:favo/photo_list.dart';
+import 'package:flutter_riverpod/all.dart';
 import 'package:rive/rive.dart';
-import 'dart:math';
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,7 +15,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //アプリ起動前にFirebase初期化処理を入れる
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(
+    //Providerで定義したデータを渡せるようにする
+    ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -25,7 +31,31 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: LoginPage(title: 'ログイン'),
+      //Consumerを使うことでデータでも受け取れる
+      home: Consumer(builder: (context, watch, child) {
+        //ユーザー情報を取得
+        final asyncUser = watch(userProvider);
+
+        return asyncUser.when(
+          data: (User data) {
+            return data == null ? LoginPage(title: 'Login',) : PhotoListPage(title: 'Photo');
+          },
+          loading: () {
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          },
+          error: (e, stackTrace) {
+            return Scaffold(
+              body: Center(
+                child: Text(e.toString()),
+              ),
+            );
+          }
+        );
+      }),
     );
   }
 }
