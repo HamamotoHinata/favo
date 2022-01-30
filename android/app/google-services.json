@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "691059080721",
+    "project_id": "favo-a0d12",
+    "storage_bucket": "favo-a0d12.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:691059080721:android:31f4bcb25ca39720ac7bb0",
+        "android_client_info": {
+          "package_name": "com.example.favo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "691059080721-0rd0b34ojqsu47tq5j1ptifr2jmjkpqc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBO2b6vZ-AT2AnI7U31SgT7YqdcdJeOcFM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "691059080721-0rd0b34ojqsu47tq5j1ptifr2jmjkpqc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

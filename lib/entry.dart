@@ -3,6 +3,8 @@ import 'package:favo/main.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
 import 'dart:ui';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EntryPage extends StatefulWidget {
   EntryPage({Key key, this.title}) : super(key: key);
@@ -103,13 +105,34 @@ class _EntryPageState extends State<EntryPage>
   }
 
   //アカウント登録時にチェックするメソッド
-  void _singUp() {
-    // バリデーションチェック
-    if (_formKey.currentState.validate() != true) {
-      return;
+  Future<void> _singUp() async {
+    try {
+      // バリデーションチェック
+      if (_formKey.currentState.validate() != true) {
+        return;
+      }
+      //メールアドレス・パスワードをAuthenticationに新規登録
+      final email = _mailAddress.text;
+      final password = _checkPassword.text;
+      await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+      //画面遷移
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => LoginPage(),
+        ),
+      );
+    } catch (e) {
+      //失敗したら
+      await showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("エラー"),
+              content: Text(e.toString()),
+            );
+          });
     }
-    //画面遷移
-    Navigator.of(context).pushNamed('/');
   }
 
   //入力フォーム用アニメーション
@@ -142,7 +165,6 @@ class _EntryPageState extends State<EntryPage>
                     hintText: '名前を入力してください',
                   ),
                   // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                  autovalidate: false,
                   //バリテーションチェック
                   validator: (value) {
                     if (value.isEmpty) {
@@ -179,8 +201,6 @@ class _EntryPageState extends State<EntryPage>
                     labelText: "Email",
                     hintText: 'メールアドレスを入力してください',
                   ),
-                  // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                  autovalidate: false,
                   validator: (value) {
                     const pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
                     final regExp = RegExp(pattern);
@@ -220,8 +240,6 @@ class _EntryPageState extends State<EntryPage>
                     labelText: "Password",
                     hintText: 'パスワードを入力してください',
                   ),
-                  // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                  autovalidate: false,
                   validator: (value) {
                     String pattern1 =
                         r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$';
@@ -267,8 +285,6 @@ class _EntryPageState extends State<EntryPage>
                     labelText: "Check Password",
                     hintText: 'もう一度パスワードを入力してください',
                   ),
-                  // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                  autovalidate: false,
                   validator: (value) {
                     setState(() {
                       password = _password.text;

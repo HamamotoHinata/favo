@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'main.dart';
 
 class PhotoViewPage extends StatefulWidget {
   const PhotoViewPage({
     Key key,
     this.imageURL,
+    this.imageList,
   }) : super(key: key);
+
   //最初に表示する画像のURLを受け取る
   final String imageURL;
+
+  //引数から画像のURLを受け取る
+  final List<String> imageList;
 
   @override
   _PhotoViewPageState createState() => _PhotoViewPageState();
@@ -22,7 +29,7 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
   void initState() {
     super.initState();
 
-    final int initialPage = imageList.indexOf(widget.imageURL);
+    final int initialPage = widget.imageList.indexOf(widget.imageURL);
     _controller = PageController(
       initialPage: initialPage,
     );
@@ -44,7 +51,7 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
           PageView(
             controller: _controller,
             onPageChanged: (int index) => {},
-            children: imageList.map((String imageURL){
+            children: widget.imageList.map((String imageURL) {
               return Image.network(
                 imageURL,
                 fit: BoxFit.cover,
@@ -88,6 +95,18 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  //ログアウト
+  Future<void> _onSignOut() async {
+    //ログアウト処理
+    await FirebaseAuth.instance.signOut();
+    //現在の画面は不要になるのでpushReplacementを使う
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => LoginPage(title: 'ログイン'),
       ),
     );
   }

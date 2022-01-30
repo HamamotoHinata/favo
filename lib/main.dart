@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:favo/entry.dart';
@@ -5,8 +6,14 @@ import 'package:favo/photo_list.dart';
 import 'package:rive/rive.dart';
 import 'dart:math';
 import 'dart:ui';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
+  //Flutterの初期化処理を待つ
+  WidgetsFlutterBinding.ensureInitialized();
+  //アプリ起動前にFirebase初期化処理を入れる
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -18,6 +25,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      home: LoginPage(title: 'ログイン'),
     );
   }
 }
@@ -42,10 +50,6 @@ class _LoginPageState extends State<LoginPage>
   //アニメーション用
   AnimationController _animationController;
 
-  //Rive用アニメーション
-  Artboard _riveArtboard;
-  RiveAnimationController _riveController;
-
   //初期に読み込まれる関数
   @override
   void initState() {
@@ -57,19 +61,6 @@ class _LoginPageState extends State<LoginPage>
     );
     //呼び出し
     _animationController.forward();
-
-    //Riveファイルを読み込む
-    rootBundle.load('assets/star.riv').then(
-      (data) async {
-        final file = RiveFile();
-        if (file.import(data)) {
-          final artboard = file.mainArtboard;
-          artboard
-              .addController(_riveController = SimpleAnimation('Animation 1'));
-          setState(() => _riveArtboard = artboard);
-        }
-      },
-    );
     super.initState();
   }
 
@@ -126,7 +117,6 @@ class _LoginPageState extends State<LoginPage>
                           hintText: 'メールアドレスを入力してください',
                         ),
                         // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                        autovalidate: false,
                         validator: (value) {
                           const pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
                           final regExp = RegExp(pattern);
@@ -165,9 +155,6 @@ class _LoginPageState extends State<LoginPage>
                           labelText: "Password",
                           hintText: 'パスワードを入力してください',
                         ),
-                        // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                        autovalidate: false,
-                        //autovalidateMode: AutovalidateMode.onUserInteraction,
                         validator: (value) {
                           String pattern1 =
                               r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$';
@@ -205,7 +192,7 @@ class _LoginPageState extends State<LoginPage>
                             //side: BorderSide(color: Colors.black),
                             ),
                         //押した時の処理
-                        onPressed: () => _singUp(),
+                        onPressed: () => _singIn(),
                       ),
                       //位置調整
                       SizedBox(height: 40),
@@ -310,7 +297,10 @@ class _LoginPageState extends State<LoginPage>
                 height: 90,
                 width: 90,
                 // Riveアニメーションの部分！
-                child: Rive(artboard: _riveArtboard),
+                child: RiveAnimation.asset(
+                  'assets/_check_icon.riv',
+                  animations: const ['show'],
+                ),
               ),
             ],
           );
@@ -337,16 +327,33 @@ class _LoginPageState extends State<LoginPage>
   }
 
   //アカウント登録時にチェックするメソッド
-  void _singUp() {
-    // バリデーションチェック
-    if (_formKey.currentState.validate() != true) {
-      return;
+  Future<void> _singIn() async {
+    try {
+      // バリデーションチェック
+      if (_formKey.currentState.validate() != true) {
+        return;
+      }
+      //新規登録と同じ入力
+      final String email = _mailAddress.text;
+      final String password = _password.text;
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+      //画面遷移(現在の画面を削除して、新しく画面を追加する)
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => PhotoListPage(title: '画像一覧'),
+        ),
+      );
+    } catch (e) {
+      //失敗
+      await showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("エラー"),
+              content: Text(e.toString()),
+            );
+          });
     }
-    //画面遷移(現在の画面を削除して、新しく画面を追加する)
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => PhotoListPage(title: '画像一覧'),
-      ),
-    );
   }
 }
