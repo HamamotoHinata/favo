@@ -9,6 +9,7 @@ import 'package:favo/photo_view.dart';
 import 'package:flutter_riverpod/all.dart';
 import 'package:flutter_riverpod/src/provider.dart';
 import 'main.dart';
+import 'package:rive/rive.dart';
 
 class PhotoListPage extends StatefulWidget {
   PhotoListPage({Key key, this.title}) : super(key: key);
@@ -20,14 +21,11 @@ class PhotoListPage extends StatefulWidget {
 }
 
 class _PhotoListPageState extends State<PhotoListPage> {
-  int _currentIndex;
   PageController _controller;
 
   @override
   void initState() {
     super.initState();
-    //PageViewで表示されているWidgetの番号を貼っておく
-    _currentIndex = 0;
     //PageViewの切り替えで使う
     _controller = PageController(
       initialPage: context.read(photoListIndexProvider).state,
@@ -36,107 +34,214 @@ class _PhotoListPageState extends State<PhotoListPage> {
 
   @override
   Widget build(BuildContext context) {
-    //ログインしているユーザーの情報
-    final User user = FirebaseAuth.instance.currentUser;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          IconButton(
-            onPressed: () => {
-              _onSignOut(),
-            },
-            icon: Icon(Icons.exit_to_app),
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          // 中央寄せを設定
+          centerTitle: true,
+          title: Text(
+              widget.title,
+            style: TextStyle(color: Colors.white),
           ),
-        ],
-      ),
-      body: PageView(
-          controller: _controller,
-          //表示が切り替わったとき
-          onPageChanged: (int index) => _onPageChanged(index),
-          children: [
-            //[全ての画像]を表示する部分
-            Consumer(
-              builder: (context, watch, child) {
-                //画像データ一覧を受け取る
-                final asyncPhotoList = watch(photoListPvovider);
-                return asyncPhotoList.when(
-                  data: (List<Photo> photoList) {
-                    return PhotoGridView(
-                      //CloudFireStoreから取得した画像のURL一覧を渡す
-                      photoList: photoList,
-                      //コールバックを設定しタップした画像のURLを受け取る
-                      onTap: (photo) => _onTapPhoto(photo, photoList),
-                      //お気に入り登録
-                      onTapFav: (photo) => _onTapFav(photo),
+          elevation: 10,
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.pinkAccent,
+          actions: [
+            IconButton(
+              onPressed:  () => {
+                showDialog(
+                  context: context,
+                  builder: (_) {
+                    return WillPopScope(
+                      onWillPop: () async => false,
+                      child: AlertDialog(
+                        //角丸
+                        shape: const RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(30.0))),
+                        content: SingleChildScrollView(
+                          child: ListBody(
+                            children: <Widget>[
+                              Column(
+                                children: <Widget>[
+                                  //テキスト
+                                  Text(
+                                    "\n"
+                                    "ログアウトしますか？",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  //rive
+                                  SizedBox(
+                                    height: 250,
+                                    width: 250,
+                                    child: RiveAnimation.asset(
+                                      'assets/alert_icon.riv',
+                                      animations: const ['show'],
+                                    ),
+                                  ),
+                                  //okボタン
+                                  MaterialButton(
+                                    height: 60.0,
+                                    minWidth: 200.0,
+                                    child: Text(
+                                      "OK",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    color: Colors.red,
+                                    shape: const StadiumBorder(
+                                        //side: BorderSide(color: Colors.black),
+                                        ),
+                                    //押した時の処理
+                                    onPressed: () {
+                                      _onSignOut();
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  //位置調整
+                                  SizedBox(height: 30),
+                                  //Cancelボタン
+                                  MaterialButton(
+                                    height: 60.0,
+                                    minWidth: 200.0,
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    color: Colors.black,
+                                    shape: const StadiumBorder(
+                                        //side: BorderSide(color: Colors.black),
+                                        ),
+                                    //押した時の処理
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     );
                   },
-                  loading: () {
-                    return Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  },
-                  error: (e, stackTrace) {
-                    return Center(
-                      child: Text(e.toString()),
-                    );
-                  },
-                );
+                ),
               },
+              icon: Icon(Icons.exit_to_app),
             ),
-            //[お気に入り登録したが画像]を表示する部分
-            Consumer(
-              builder: (context, watch, child) {
-                //画像データ一覧を受け取る
-                final asyncPhotoList = watch(photoListPvovider);
-                return asyncPhotoList.when(
-                  data: (List<Photo> photoList) {
-                    return PhotoGridView(
-                      //CloudFireStoreから取得した画像のURL一覧を渡す
-                      photoList: photoList,
-                      //コールバックを設定しタップした画像のURLを受け取る
-                      onTap: (photo) => _onTapPhoto(photo, photoList),
-                      //お気に入り登録
-                      onTapFav: (photo) => _onTapFav(photo),
-                    );
-                  },
-                  loading: () {
-                    return Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  },
-                  error: (e, stackTrace) {
-                    return Center(
-                      child: Text(e.toString()),
-                    );
-                  },
-                );
-              },
-            ),
-          ]),
-      //画像追加ボタン
-      floatingActionButton: FloatingActionButton(
-        //画像追加用ボタンを田尾応したときの処理
-        onPressed: () => _onAddPhoto(),
-        child: Icon(Icons.add),
-      ),
-      //ナビゲーションバー表示部分
-      bottomNavigationBar: Consumer(
-        builder: (context, watch, child) {
-          //現在のページを受け取る
-          final photoIndex = watch(photoListIndexProvider).state;
-          return BottomNavigationBar(
-            onTap: (int index) => _onTabBottunNavigationItem(index),
-            currentIndex: _currentIndex,
-            items: [
-              BottomNavigationBarItem(icon: Icon(Icons.image), label: 'フォト'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.favorite), label: 'お気に入り'),
-            ],
-          );
-        },
+          ],
+        ),
+        body: PageView(
+            controller: _controller,
+            //表示が切り替わったとき
+            onPageChanged: (int index) => _onPageChanged(index),
+            children: [
+              //[全ての画像]を表示する部分
+              Consumer(
+                builder: (context, watch, child) {
+                  //画像データ一覧を受け取る
+                  final asyncPhotoList = watch(photoListPvovider);
+                  return asyncPhotoList.when(
+                    data: (List<Photo> photoList) {
+                      return PhotoGridView(
+                        //CloudFireStoreから取得した画像のURL一覧を渡す
+                        photoList: photoList,
+                        //コールバックを設定しタップした画像のURLを受け取る
+                        onTap: (photo) => _onTapPhoto(photo, photoList),
+                        //お気に入り登録
+                        onTapFav: (photo) => _onTapFav(photo),
+                      );
+                    },
+                    loading: () {
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                    error: (e, stackTrace) {
+                      return Center(
+                        child: Text(e.toString()),
+                      );
+                    },
+                  );
+                },
+              ),
+              //[お気に入り登録したが画像]を表示する部分
+              Consumer(
+                builder: (context, watch, child) {
+                  //画像データ一覧を受け取る
+                  final asyncPhotoList = watch(favoritePhotoListProvider);
+                  return asyncPhotoList.when(
+                    data: (List<Photo> photoList) {
+                      return PhotoGridView(
+                        //CloudFireStoreから取得した画像のURL一覧を渡す
+                        photoList: photoList,
+                        //コールバックを設定しタップした画像のURLを受け取る
+                        onTap: (photo) => _onTapPhoto(photo, photoList),
+                        //お気に入り登録
+                        onTapFav: (photo) => _onTapFav(photo),
+                      );
+                    },
+                    loading: () {
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                    error: (e, stackTrace) {
+                      return Center(
+                        child: Text(e.toString()),
+                      );
+                    },
+                  );
+                },
+              ),
+            ]),
+        //画像追加ボタン
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.pink,
+          //画像追加用ボタンを押したときの処理
+          onPressed: () => _onAddPhoto(),
+          child: Icon(Icons.add),
+        ),
+        //ナビゲーションバー表示部分
+        bottomNavigationBar: Consumer(
+          builder: (context, watch, child) {
+            //現在のページを受け取る
+            final photoIndex = watch(photoListIndexProvider).state;
+            return BottomNavigationBar(
+              backgroundColor: Colors.white,
+              onTap: (int index) => _onTabBottunNavigationItem(index),
+              currentIndex: photoIndex,
+              items: [
+                BottomNavigationBarItem(icon: Icon(Icons.image), label: 'photo'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.favorite), label: 'favo'),
+              ],
+            );
+          },
+        ),
       ),
     );
+  }
+
+  //ナビゲーションバーの処理
+  void _onTabBottunNavigationItem(int index) {
+    //PageViewで表示するWidgetを切り替える
+    _controller.animateToPage(
+      //表示するWidgetの番号
+      //1,全ての画像、　2,お気に入り登録した画像
+      index,
+      //表示を切り替える時にかかる時間
+      duration: Duration(milliseconds: 300),
+      //アニメーションの動き
+      curve: Curves.easeIn,
+    );
+    //ページの値を更新する
+    context.read(photoListIndexProvider).state = index;
   }
 
   //画像選択処理
@@ -181,21 +286,6 @@ class _PhotoListPageState extends State<PhotoListPage> {
     context.read(photoListIndexProvider).state = index;
   }
 
-  //ナビゲーションバーの処理
-  void _onTabBottunNavigationItem(int index) {
-    //PageViewで表示するWidgetを切り替える
-    _controller.animateToPage(
-        //表示するWidgetの番号
-        //1,全ての画像、　2,お気に入り登録した画像
-        index,
-        //表示を切り替える時にかかる時間
-        duration: Duration(milliseconds: 300),
-        //アニメーションの動き
-        curve: Curves.easeIn);
-    //ページの値を更新する
-    context.read(photoListIndexProvider).state = index;
-  }
-
   //ログアウト
   Future<void> _onSignOut() async {
     //ログアウト処理
@@ -203,7 +293,7 @@ class _PhotoListPageState extends State<PhotoListPage> {
     //現在の画面は不要になるのでpushReplacementを使う
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => LoginPage(title: 'ログイン'),
+        builder: (_) => LoginPage(),
       ),
     );
   }

@@ -27,42 +27,39 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'favo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      //デバッグアイコンを消す
+      debugShowCheckedModeBanner: false,
       //Consumerを使うことでデータでも受け取れる
       home: Consumer(builder: (context, watch, child) {
         //ユーザー情報を取得
         final asyncUser = watch(userProvider);
 
-        return asyncUser.when(
-          data: (User data) {
-            return data == null ? LoginPage(title: 'Login',) : PhotoListPage(title: 'Photo');
-          },
-          loading: () {
-            return Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          },
-          error: (e, stackTrace) {
-            return Scaffold(
-              body: Center(
-                child: Text(e.toString()),
-              ),
-            );
-          }
-        );
+        return asyncUser.when(data: (User data) {
+          return data == null ? LoginPage() : PhotoListPage(title: 'Photo List');
+        }, loading: () {
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }, error: (e, stackTrace) {
+          return Scaffold(
+            body: Center(
+              child: Text(e.toString()),
+            ),
+          );
+        });
       }),
     );
   }
 }
 
 class LoginPage extends StatefulWidget {
-  LoginPage({Key key, this.title}) : super(key: key);
-  final String title;
+  LoginPage({Key key}) : super(key: key);
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -102,179 +99,214 @@ class _LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
-      },
-      child: Scaffold(
-        // Scaffold自体の背景色も透過に
-        //backgroundColor: Colors.transparent,
-        body: Form(
-          key: _formKey,
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: SingleChildScrollView(
-              child: Center(
-                child: Padding(
-                  //横幅調整
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: <Widget>[
-                      //位置調整(SingleChildScrollViewを使うと中央寄せが効かなくなる)
-                      SizedBox(height: 200),
-                      //タイトル
-                      _titleAnimation(),
-                      //位置調整
-                      SizedBox(height: 100),
-                      //メール
-                      TextFormField(
-                        //入力制限
-                        controller: _mailAddress,
-                        keyboardType: TextInputType.emailAddress,
-                        obscureText: false,
-                        autocorrect: true,
-                        enableInteractiveSelection: true,
-                        maxLength: 20,
-                        //デザイン
-                        decoration: const InputDecoration(
-                          icon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
-                          // 外枠付きデザイン
-                          filled: true,
-                          // fillColorで指定した色で塗り潰し
-                          fillColor: Colors.white,
-                          labelText: "Email",
-                          hintText: 'メールアドレスを入力してください',
-                        ),
-                        // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
-                        validator: (value) {
-                          const pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
-                          final regExp = RegExp(pattern);
-                          if (value.isEmpty) {
-                            return 'メールアドレスを入力してください。';
-                          } else if (value.indexOf(' ') >= 0 ||
-                              value.trim() == '') {
-                            return '空文字は受け付けていません。';
-                          } else if (value.indexOf('　') >= 0 ||
-                              value.trim() == '') {
-                            return '空文字は受け付けていません。';
-                          } else if (!regExp.hasMatch(value)) {
-                            return 'メール形式が正しくありません';
-                          }
-                        },
-                      ),
-                      //位置調整
-                      SizedBox(height: 40),
-                      //パスワード
-                      TextFormField(
-                        //入力制限
-                        controller: _password,
-                        keyboardType: TextInputType.visiblePassword,
-                        obscureText: true,
-                        autocorrect: false,
-                        enableInteractiveSelection: false,
-                        maxLength: 10,
-                        //デザイン
-                        decoration: const InputDecoration(
-                          icon: Icon(Icons.vpn_key),
-                          border: OutlineInputBorder(),
-                          // 外枠付きデザイン
-                          filled: true,
-                          // fillColorで指定した色で塗り潰し
-                          fillColor: Colors.white,
-                          labelText: "Password",
-                          hintText: 'パスワードを入力してください',
-                        ),
-                        validator: (value) {
-                          String pattern1 =
-                              r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$';
-                          String pattern2 = r'^(?=.*[!-/:-@\\[-`{-~]).{1,}$';
-                          RegExp regExp1 = new RegExp(pattern1);
-                          RegExp regExp2 = new RegExp(pattern2);
+    return LayoutBuilder(builder: (context, contraint) {
+      final height = contraint.maxHeight;
+      final width = contraint.maxWidth;
+      return WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: Stack(children: <Widget>[
+          Container(
+            color: Colors.white,
+          ),
+          //上のサークル
+          Positioned(
+            top: -height * 0.5,
+            left: -height * 0.39,
+            child: Container(
+              height: height,
+              width: width,
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.pinkAccent.withOpacity(0.2)),
+            ),
+          ),
+          //下のサークル
+          Positioned(
+            top: height * 0.50,
+            left: height * 0.25,
+            child: Container(
+              height: height,
+              width: width,
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.pinkAccent.withOpacity(0.4)),
+            ),
+          ),
+          Scaffold(
+            // Scaffold自体の背景色も透過に
+            backgroundColor: Colors.transparent,
+            body: Form(
+              key: _formKey,
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: Padding(
+                      //横幅調整
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: <Widget>[
+                          //位置調整(SingleChildScrollViewを使うと中央寄せが効かなくなる)
+                          SizedBox(height: 200),
+                          //タイトル
+                          _titleAnimation(),
+                          //位置調整
+                          SizedBox(height: 100),
+                          //メール
+                          TextFormField(
+                            //入力制限
+                            controller: _mailAddress,
+                            keyboardType: TextInputType.emailAddress,
+                            obscureText: false,
+                            autocorrect: true,
+                            enableInteractiveSelection: true,
+                            maxLength: 20,
+                            //デザイン
+                            decoration: const InputDecoration(
+                              icon: Icon(Icons.email),
+                              border: OutlineInputBorder(),
+                              // 外枠付きデザイン
+                              filled: true,
+                              // fillColorで指定した色で塗り潰し
+                              fillColor: Colors.white,
+                              labelText: "Email",
+                              hintText: 'メールアドレスを入力してください',
+                            ),
+                            // 入力変化しても自動でチェックしない。trueにすると初期状態および入力が変化する毎に自動でvalidatorがコールされる
+                            validator: (value) {
+                              const pattern =
+                                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+                              final regExp = RegExp(pattern);
+                              if (value.isEmpty) {
+                                return 'メールアドレスを入力してください。';
+                              } else if (value.indexOf(' ') >= 0 ||
+                                  value.trim() == '') {
+                                return '空文字は受け付けていません。';
+                              } else if (value.indexOf('　') >= 0 ||
+                                  value.trim() == '') {
+                                return '空文字は受け付けていません。';
+                              } else if (!regExp.hasMatch(value)) {
+                                return 'メール形式が正しくありません';
+                              }
+                            },
+                          ),
+                          //位置調整
+                          SizedBox(height: 40),
+                          //パスワード
+                          TextFormField(
+                            //入力制限
+                            controller: _password,
+                            keyboardType: TextInputType.visiblePassword,
+                            obscureText: true,
+                            autocorrect: false,
+                            enableInteractiveSelection: false,
+                            maxLength: 10,
+                            //デザイン
+                            decoration: const InputDecoration(
+                              icon: Icon(Icons.vpn_key),
+                              border: OutlineInputBorder(),
+                              // 外枠付きデザイン
+                              filled: true,
+                              // fillColorで指定した色で塗り潰し
+                              fillColor: Colors.white,
+                              labelText: "Password",
+                              hintText: 'パスワードを入力してください',
+                            ),
+                            validator: (value) {
+                              String pattern1 =
+                                  r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$';
+                              String pattern2 =
+                                  r'^(?=.*[!-/:-@\\[-`{-~]).{1,}$';
+                              RegExp regExp1 = new RegExp(pattern1);
+                              RegExp regExp2 = new RegExp(pattern2);
 
-                          if (value.isEmpty) {
-                            return 'パスワードを入力してください。';
-                          } else if (value.indexOf(' ') >= 0 ||
-                              value.trim() == '') {
-                            return '空文字は受け付けていません。';
-                          } else if (value.indexOf('　') >= 0 ||
-                              value.trim() == '') {
-                            return '空文字は受け付けていません。';
-                          } else if (!regExp1.hasMatch(value)) {
-                            return '大文字小文字数字を含めて８文字以上入力ください';
-                          } else if (regExp2.hasMatch(value)) {
-                            return '使用できない文字が含まれています';
-                          }
-                        },
-                      ),
-                      //位置調整
-                      SizedBox(height: 60),
-                      //ログインボタン
-                      MaterialButton(
-                        height: 70.0,
-                        minWidth: 350.0,
-                        child: Text(
-                          "Login",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        color: Colors.green,
-                        shape: const StadiumBorder(
-                            //side: BorderSide(color: Colors.black),
+                              if (value.isEmpty) {
+                                return 'パスワードを入力してください。';
+                              } else if (value.indexOf(' ') >= 0 ||
+                                  value.trim() == '') {
+                                return '空文字は受け付けていません。';
+                              } else if (value.indexOf('　') >= 0 ||
+                                  value.trim() == '') {
+                                return '空文字は受け付けていません。';
+                              } else if (!regExp1.hasMatch(value)) {
+                                return '大文字小文字数字を含めて８文字以上入力ください';
+                              } else if (regExp2.hasMatch(value)) {
+                                return '使用できない文字が含まれています';
+                              }
+                            },
+                          ),
+                          //位置調整
+                          SizedBox(height: 60),
+                          //ログインボタン
+                          MaterialButton(
+                            height: 70.0,
+                            minWidth: 350.0,
+                            child: Text(
+                              "Login",
+                              style: TextStyle(color: Colors.white),
                             ),
-                        //押した時の処理
-                        onPressed: () => _singIn(),
-                      ),
-                      //位置調整
-                      SizedBox(height: 40),
-                      //新規ボタン
-                      MaterialButton(
-                        height: 70.0,
-                        minWidth: 200.0,
-                        child: Text(
-                          "Sign up",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        color: Colors.black,
-                        shape: const StadiumBorder(
-                            //side: BorderSide(color: Colors.black),
+                            color: Colors.pinkAccent,
+                            shape: const StadiumBorder(
+                                //side: BorderSide(color: Colors.black),
+                                ),
+                            //押した時の処理
+                            onPressed: () => _singIn(),
+                          ),
+                          //位置調整
+                          SizedBox(height: 40),
+                          //新規ボタン
+                          MaterialButton(
+                            height: 70.0,
+                            minWidth: 200.0,
+                            child: Text(
+                              "Sign Up",
+                              style: TextStyle(color: Colors.white),
                             ),
-                        //押した時の処理
-                        onPressed: () {
-                          //画面遷移
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) {
-                                // 表示する画面のWidget
-                                return EntryPage(title: '新規登録');
-                              },
-                              transitionsBuilder: (context, animation,
-                                  secondaryAnimation, child) {
-                                // 遷移時のアニメーションを指定
-                                final Offset begin = Offset(0.0, 1.0);
-                                final Offset end = Offset.zero;
-                                final Tween<Offset> tween =
-                                    Tween(begin: begin, end: end);
-                                final Animation<Offset> offsetAnimation =
-                                    animation.drive(tween);
-                                return SlideTransition(
-                                  position: offsetAnimation,
-                                  child: child,
-                                );
-                              },
-                            ),
-                          );
-                        },
+                            color: Colors.black,
+                            shape: const StadiumBorder(
+                                //side: BorderSide(color: Colors.black),
+                                ),
+                            //押した時の処理
+                            onPressed: () {
+                              //画面遷移
+                              Navigator.of(context).push(
+                                PageRouteBuilder(
+                                  pageBuilder:
+                                      (context, animation, secondaryAnimation) {
+                                    // 表示する画面のWidget
+                                    return EntryPage();
+                                  },
+                                  transitionsBuilder: (context, animation,
+                                      secondaryAnimation, child) {
+                                    // 遷移時のアニメーションを指定
+                                    final Offset begin = Offset(0.0, 1.0);
+                                    final Offset end = Offset.zero;
+                                    final Tween<Offset> tween =
+                                        Tween(begin: begin, end: end);
+                                    final Animation<Offset> offsetAnimation =
+                                        animation.drive(tween);
+                                    return SlideTransition(
+                                      position: offsetAnimation,
+                                      child: child,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
+        ]),
+      );
+    });
   }
 
   //タイトルアニメーション
@@ -286,39 +318,31 @@ class _LoginPageState extends State<LoginPage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Transform(
-                transform: _generateMatrix(_createAnimation(0)),
+                transform: _generateMatrix(_createAnimation(8)),
                 child: Text(
                   'f',
-                  style: TextStyle(
-                    fontSize: 50,
-                  ),
+                  style: TextStyle(fontSize: 70, color: Colors.pink),
                 ),
               ),
               Transform(
-                transform: _generateMatrix(_createAnimation(1)),
+                transform: _generateMatrix(_createAnimation(7)),
                 child: Text(
                   'a',
-                  style: TextStyle(
-                    fontSize: 50,
-                  ),
+                  style: TextStyle(fontSize: 70, color: Colors.pink),
                 ),
               ),
               Transform(
-                transform: _generateMatrix(_createAnimation(2)),
+                transform: _generateMatrix(_createAnimation(6)),
                 child: Text(
                   'v',
-                  style: TextStyle(
-                    fontSize: 50,
-                  ),
+                  style: TextStyle(fontSize: 70, color: Colors.pink),
                 ),
               ),
               Transform(
-                transform: _generateMatrix(_createAnimation(3)),
+                transform: _generateMatrix(_createAnimation(5)),
                 child: Text(
                   'o',
-                  style: TextStyle(
-                    fontSize: 50,
-                  ),
+                  style: TextStyle(fontSize: 70, color: Colors.pink),
                 ),
               ),
               //画面遷移時、リセットされる
@@ -328,8 +352,8 @@ class _LoginPageState extends State<LoginPage>
                 width: 90,
                 // Riveアニメーションの部分！
                 child: RiveAnimation.asset(
-                  'assets/_check_icon.riv',
-                  animations: const ['show'],
+                  'assets/favo_button.riv',
+                  animations: const ['preview'],
                 ),
               ),
             ],
@@ -350,13 +374,13 @@ class _LoginPageState extends State<LoginPage>
 
   //フェードインの開始位置
   Matrix4 _generateMatrix(Animation animation) {
-    ////スタート位置
-    final value = lerpDouble(2000, 0, animation.value);
+    //開始位置
+    final value = lerpDouble(-2000, 0, animation.value);
     //向き(x軸、y軸、z軸)
     return Matrix4.translationValues(value, 0.0, 0.0);
   }
 
-  //アカウント登録時にチェックするメソッド
+  //ログイン時にチェックするメソッド
   Future<void> _singIn() async {
     try {
       // バリデーションチェック
@@ -371,7 +395,7 @@ class _LoginPageState extends State<LoginPage>
       //画面遷移(現在の画面を削除して、新しく画面を追加する)
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => PhotoListPage(title: '画像一覧'),
+          builder: (_) => PhotoListPage(title: 'Photo List'),
         ),
       );
     } catch (e) {

@@ -1,17 +1,14 @@
 import 'package:favo/providers.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:favo/photo.dart';
 import 'package:flutter_riverpod/all.dart';
 import 'package:flutter_riverpod/src/provider.dart';
-import 'main.dart';
 import 'package:share/share.dart';
+import 'package:rive/rive.dart';
 
 class PhotoViewPage extends StatefulWidget {
-  PhotoViewPage({Key key, this.title}) : super(key: key);
-
-  final String title;
+  PhotoViewPage({Key key}) : super(key: key);
 
   @override
   _PhotoViewPageState createState() => _PhotoViewPageState();
@@ -50,7 +47,7 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
                 data: (photoList) {
                   return PageView(
                     controller: _controller,
-                    onPageChanged: (int index) => {},
+                    //onPageChanged: (int index) => {},
                     children: photoList.map((Photo photo) {
                       return Image.network(
                         photo.imageURL,
@@ -77,20 +74,7 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
             alignment: Alignment.bottomCenter,
             child: Container(
               //フッター部分にグラデーションを入れてみる
-              decoration: BoxDecoration(
-                //線形グラデーション
-                gradient: LinearGradient(
-                  //下方向から上方向に向かってグラデーションさせる
-                  begin: FractionalOffset.bottomCenter,
-                  end: FractionalOffset.topCenter,
-                  //半透明の黒から透明にグラデーションさせる
-                  colors: [
-                    Colors.black.withOpacity(0.5),
-                    Colors.transparent,
-                  ],
-                  stops: [0.0, 1.0],
-                ),
-              ),
+              decoration: BoxDecoration(),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -105,7 +89,87 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
                   //削除ボタン
                   IconButton(
                     onPressed: () => {
-                      _onTapDelete(),
+                      showDialog(
+                        context: context,
+                        builder: (_) {
+                          return WillPopScope(
+                            onWillPop: () async => false,
+                            child: AlertDialog(
+                              //角丸
+                              shape: const RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(30.0))),
+                              content: SingleChildScrollView(
+                                child: ListBody(
+                                  children: <Widget>[
+                                    Column(
+                                      children: <Widget>[
+                                        //テキスト
+                                        Text(
+                                          "\n"
+                                          "削除しますか？",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20,
+                                          ),
+                                        ),
+                                        //rive
+                                        SizedBox(
+                                          height: 250,
+                                          width: 250,
+                                          child: RiveAnimation.asset(
+                                          'assets/alert_icon.riv',
+                                          animations: const ['show'],
+                                          ),
+                                        ),
+                                        //okボタン
+                                        MaterialButton(
+                                          height: 60.0,
+                                          minWidth: 200.0,
+                                          child: Text(
+                                            "OK",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          color: Colors.red,
+                                          shape: const StadiumBorder(
+                                              //side: BorderSide(color: Colors.black),
+                                              ),
+                                          //押した時の処理
+                                          onPressed: () {
+                                            _onTapDelete();
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                        //位置調整
+                                        SizedBox(height: 30),
+                                        //Cancelボタン
+                                        MaterialButton(
+                                          height: 60.0,
+                                          minWidth: 200.0,
+                                          child: Text(
+                                            "Cancel",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          color: Colors.black,
+                                          shape: const StadiumBorder(
+                                              //side: BorderSide(color: Colors.black),
+                                              ),
+                                          //押した時の処理
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     },
                     color: Colors.white,
                     icon: Icon(Icons.delete),
@@ -115,18 +179,6 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  //ログアウト
-  Future<void> _onSignOut() async {
-    //ログアウト処理
-    await FirebaseAuth.instance.signOut();
-    //現在の画面は不要になるのでpushReplacementを使う
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => LoginPage(title: 'ログイン'),
       ),
     );
   }

@@ -1,15 +1,13 @@
+import 'package:favo/photo_list.dart';
 import 'package:flutter/material.dart';
 import 'package:favo/main.dart';
 import 'package:flutter/services.dart';
-import 'dart:math';
 import 'dart:ui';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rive/rive.dart';
 
 class EntryPage extends StatefulWidget {
-  EntryPage({Key key, this.title}) : super(key: key);
-
-  final String title;
+  EntryPage({Key key}) : super(key: key);
 
   @override
   _EntryPageState createState() => _EntryPageState();
@@ -55,24 +53,28 @@ class _EntryPageState extends State<EntryPage>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
-      },
-      child: Stack(children: <Widget>[
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [
-                Colors.greenAccent.shade400,
-                Colors.white,
-                Colors.white,
-              ],
+    return LayoutBuilder(builder: (context, contraint) {
+      final height = contraint.maxHeight;
+      final width = contraint.maxWidth;
+      return WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: Stack(children: <Widget>[
+          Container(
+            color: Colors.white,
+          ),
+          //下のサークル
+          Positioned(
+            top: height * 0.54,
+            child: Container(
+              height: height,
+              width: width,
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle, color: Colors.pinkAccent.withOpacity(0.3)),
             ),
           ),
-          child: Scaffold(
+          Scaffold(
             // Scaffold自体の背景色も透過に
             backgroundColor: Colors.transparent,
             body: Form(
@@ -86,10 +88,19 @@ class _EntryPageState extends State<EntryPage>
                       child: Column(
                         children: <Widget>[
                           //位置調整(SingleChildScrollViewを使うと中央寄せが効かなくなる)
-                          SizedBox(height: 100),
+                          SizedBox(height: 70),
+                          //タイトル
+                          Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 70,
+                            ),
+                          ),
+                          SizedBox(height: 50),
                           _inputAnimation(),
                           //位置調整
-                          SizedBox(height: 16),
+                          SizedBox(height: 70),
                           _buttonAnimation(),
                         ],
                       ),
@@ -99,9 +110,9 @@ class _EntryPageState extends State<EntryPage>
               ),
             ),
           ),
-        ),
-      ]),
-    );
+        ]),
+      );
+    });
   }
 
   //アカウント登録時にチェックするメソッド
@@ -116,11 +127,78 @@ class _EntryPageState extends State<EntryPage>
       final password = _checkPassword.text;
       await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
-      //画面遷移
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => LoginPage(),
-        ),
+      //登録完了のお知らせ
+      await showDialog(
+        context: context,
+        builder: (_) {
+          return WillPopScope(
+            onWillPop: () async => false,
+            child: AlertDialog(
+              //角丸
+              shape: const RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.all(Radius.circular(30.0))),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Column(
+                      children: <Widget>[
+                        //テキスト
+                        Text(
+                          "\n"
+                              "ユーザー登録完了しました！",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        //サイズ調整
+                        SizedBox(
+                          height: 20,
+                        ),
+                        //rive
+                        SizedBox(
+                          height: 200,
+                          width: 200,
+                          child: RiveAnimation.asset(
+                            'assets/check_marker.riv',
+                            animations: const ['Animation 1'],
+                          ),
+                        ),
+                        //サイズ調整
+                        SizedBox(
+                          height: 20,
+                        ),
+                        //okボタン
+                        MaterialButton(
+                          height: 60.0,
+                          minWidth: 200.0,
+                          child: Text(
+                            "OK",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          color: Colors.red,
+                          shape: const StadiumBorder(
+                            //side: BorderSide(color: Colors.black),
+                          ),
+                          //押した時の処理
+                          onPressed: () {
+                            //画面遷移(現在の画面を削除して、新しく画面を追加する)
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => PhotoListPage(title: 'Photo List'),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       );
     } catch (e) {
       //失敗したら
@@ -178,7 +256,7 @@ class _EntryPageState extends State<EntryPage>
                 ),
               ),
               //位置調整
-              SizedBox(height: 40),
+              SizedBox(height: 30),
               //メール
               Transform(
                 transform: _sideMatrix(_createAnimation(2)),
@@ -217,7 +295,7 @@ class _EntryPageState extends State<EntryPage>
                 ),
               ),
               //位置調整
-              SizedBox(height: 40),
+              SizedBox(height: 30),
               //パスワード
               Transform(
                 transform: _sideMatrix(_createAnimation(4)),
@@ -262,7 +340,7 @@ class _EntryPageState extends State<EntryPage>
                 ),
               ),
               //位置調整
-              SizedBox(height: 40),
+              SizedBox(height: 30),
               //パスワード(確認用)
               Transform(
                 transform: _sideMatrix(_createAnimation(6)),
@@ -290,13 +368,6 @@ class _EntryPageState extends State<EntryPage>
                       password = _password.text;
                       check = _checkPassword.text;
                     });
-
-                    String pattern1 =
-                        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$';
-                    String pattern2 = r'^(?=.*[!-/:-@\\[-`{-~]).{1,}$';
-                    RegExp regExp1 = new RegExp(pattern1);
-                    RegExp regExp2 = new RegExp(pattern2);
-
                     if (value.isEmpty) {
                       return 'テキストを入力してください。';
                     } else if (value.indexOf(' ') >= 0 || value.trim() == '') {
@@ -329,10 +400,10 @@ class _EntryPageState extends State<EntryPage>
                   height: 70.0,
                   minWidth: 350.0,
                   child: Text(
-                    "Login",
+                    "Sing Up",
                     style: TextStyle(color: Colors.white),
                   ),
-                  color: Colors.green,
+                  color: Colors.pinkAccent,
                   shape: const StadiumBorder(
                       //side: BorderSide(color: Colors.black),
                       ),
@@ -349,7 +420,7 @@ class _EntryPageState extends State<EntryPage>
                   height: 70.0,
                   minWidth: 200.0,
                   child: Text(
-                    "back",
+                    "Back",
                     style: TextStyle(color: Colors.white),
                   ),
                   color: Colors.black,
@@ -363,7 +434,7 @@ class _EntryPageState extends State<EntryPage>
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) {
                           // 表示する画面のWidget
-                          return LoginPage(title: 'ログイン');
+                          return LoginPage();
                         },
                         transitionsBuilder:
                             (context, animation, secondaryAnimation, child) {
